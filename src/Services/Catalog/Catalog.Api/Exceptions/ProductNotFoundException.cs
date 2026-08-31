@@ -1,7 +1,7 @@
 namespace Catalog.Api.Exceptions;
 
 public class ProductNotFoundException(Guid id)
-  : Exception($"Product with Id {id} was not found.")
+  : NotFoundException("Product", id)
 {
   public Guid Id { get; } = id;
 }
