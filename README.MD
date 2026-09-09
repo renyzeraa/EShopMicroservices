@@ -74,15 +74,29 @@ src/
 
 ### Docker Compose (recomendado)
 
-```bash
-cd src
-docker compose up -d
+Antes de iniciar, exporte e confie no certificado HTTPS de desenvolvimento. No PowerShell (Windows):
+
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE/.aspnet/https" | Out-Null
+dotnet dev-certs https --export-path "$env:USERPROFILE/.aspnet/https/eshop.pem" --format PEM --no-password
+dotnet dev-certs https --trust
 ```
 
-Sobe `catalogdb`, `basketdb` e `catalog.api`. O `catalog.api` só inicia após o healthcheck do Postgres passar.
+O comando exporta `eshop.pem` e `eshop.key`. O Compose monta essa pasta como somente leitura nas duas APIs. Em Linux/macOS, use `$HOME/.aspnet/https` como pasta de exportação. A chave privada não tem senha: use apenas em desenvolvimento, restrinja o acesso à pasta e não adicione esses arquivos ao repositório. Sem os arquivos, as APIs não iniciam com esta configuração HTTPS.
 
-- Catalog API → http://localhost:6000
-- Health check → http://localhost:6000/health
+```bash
+cd src
+docker compose up -d --build
+```
+
+Sobe `catalogdb`, `basketdb`, `distribuitedcache`, `catalog.api` e `basket.api`. As APIs aguardam os healthchecks das respectivas dependências.
+
+| API | HTTP | HTTPS |
+|---|---|---|
+| Catalog | http://localhost:6000 | https://localhost:6060 |
+| Basket | http://localhost:6001 | https://localhost:6061 |
+
+O endpoint `/health` está disponível nos dois protocolos de cada API. HTTP permanece habilitado sem redirecionamento obrigatório para HTTPS.
 
 ### Local (dotnet CLI)
 
