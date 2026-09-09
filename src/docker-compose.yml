@@ -5,6 +5,9 @@ services:
   basketdb:
     image: postgres:17
 
+  distribuitedcache:
+    image: redis:latest
+
   catalog.api:
     image: eshop/catalog.api:latest
     build:
