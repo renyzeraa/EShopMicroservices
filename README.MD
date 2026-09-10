@@ -1,116 +1,72 @@
 # EShop Microservices
 
-E-commerce de referência em **.NET 10**, construído com microsserviços independentes, **Vertical Slice Architecture** e **CQRS**. O objetivo é servir como base prática de arquitetura distribuída: cada serviço tem seu próprio banco, seu próprio ciclo de vida e nenhuma dependência de código com os demais — apenas os blocos de infraestrutura compartilhados.
+Projeto de referência de e-commerce em **.NET 10**, voltado ao estudo e à prática de arquitetura de microsserviços com **Vertical Slice Architecture** e **CQRS**.
 
-## Stack
+## Serviços
 
-| Camada | Tecnologia |
+| Serviço | Responsabilidade |
 |---|---|
-| Runtime | .NET 10 / ASP.NET Core Minimal APIs |
-| Roteamento | [Carter](https://github.com/CarterCommunity/Carter) (módulos de endpoint) |
-| Mensageria interna | [MediatR](https://github.com/jbogard/MediatR) (CQRS + pipeline behaviors) |
-| Validação | FluentValidation |
-| Mapeamento | Mapster |
-| Persistência | PostgreSQL 17 via [Marten](https://martendb.io/) (document store) |
-| Observabilidade | HealthChecks (`AspNetCore.HealthChecks.NpgSql`) |
-| Orquestração | Docker Compose |
+| Catalog.Api | Cadastro, consulta, atualização e exclusão de produtos. |
+| Basket.Api | Armazenamento, consulta e exclusão de carrinhos de compras, com cache em Redis. |
+
+Cada serviço possui seu próprio banco PostgreSQL. As APIs e suas dependências são orquestradas com Docker Compose.
+
+## Tecnologias
+
+| Área | Tecnologias |
+|---|---|
+| APIs | .NET 10, ASP.NET Core Minimal APIs e Carter |
+| Comandos e consultas | MediatR |
+| Validação e mapeamento | FluentValidation e Mapster |
+| Persistência | PostgreSQL 17 e Marten |
+| Cache | Redis |
+| Monitoramento | Health checks e logging |
+| Containers | Docker e Docker Compose |
 
 ## Arquitetura
 
-```
-┌─────────────────┐        ┌─────────────────┐
-│   Catalog.Api   │        │   Basket.Api    │
-│  (porta 6000)   │        │  (porta 5001)   │
-└────────┬────────┘        └────────┬────────┘
-         │                          │
-   ┌─────▼─────┐              ┌─────▼─────┐
-   │ catalogdb │              │ basketdb  │
-   │ pg :5432  │              │ pg :5433  │
-   └───────────┘              └───────────┘
-              ╲              ╱
-             ┌──────────────────┐
-             │  BuildingBlocks  │
-             │ CQRS · Behaviors │
-             │    Exceptions    │
-             └──────────────────┘
-```
-
-**Vertical Slice**: cada caso de uso é uma pasta autocontida com `Endpoint` + `Handler` + `Command/Query` + `Validator` no mesmo arquivo/diretório. Nada de camadas horizontais anêmicas — a mudança de uma feature fica confinada a uma pasta.
-
-**Pipeline MediatR** (aplicado a todo comando/query):
-1. `ValidationBehavior` — executa os validators do FluentValidation e falha rápido com `ValidationException`.
-2. `LoggingBehavior` — log de entrada/saída e alerta de performance para requisições acima de 3s.
-
-**Tratamento de erros**: `CustomExceptionHandler` centraliza as exceções e devolve sempre `application/problem+json` (RFC 7807), com `traceId` e o dicionário de `errors` de validação quando aplicável.
-
-| Exceção | HTTP |
-|---|---|
-| `ValidationException`, `BadRequestException` | 400 |
-| `NotFoundException` | 404 |
-| demais | 500 |
+- **Vertical Slice Architecture**: código organizado por caso de uso.
+- **CQRS**: separação entre comandos de escrita e consultas de leitura.
+- **BuildingBlocks**: componentes compartilhados de validação, logging e tratamento de erros.
+- **Persistência independente**: cada microsserviço gerencia seus próprios dados.
 
 ## Estrutura
 
-```
+```text
 src/
-├── BuildingBlocks/BuildingBlocks/     # Biblioteca compartilhada (sem regra de negócio)
-│   ├── CQRS/                          # ICommand, IQuery e seus handlers
-│   ├── Behaviors/                     # Validation e Logging
-│   └── Exceptions/                    # Exceções + handler global
+├── BuildingBlocks/            # Componentes compartilhados
 ├── Services/
-│   ├── Catalog/Catalog.Api/           # Produtos
-│   │   ├── Products/<UseCase>/        # Uma pasta por slice
-│   │   ├── Data/                      # Seed inicial (Marten)
-│   │   └── Models/
-│   └── Basket/Basket.Api/             # Carrinho de compras
-│       ├── Basket/<UseCase>/
-│       ├── Data/                      # BasketRepository
-│       └── Models/
+│   ├── Catalog/               # Catálogo de produtos
+│   └── Basket/                # Carrinho de compras
 ├── docker-compose.yml
 └── docker-compose.override.yml
 ```
 
-## Executando
+## Como rodar
 
-### Docker Compose (recomendado)
+Com o **Docker e o Docker Compose disponíveis no WSL**, execute os comandos no terminal Linux, a partir da raiz do repositório. Não é necessário instalar o SDK .NET localmente.
 
-Antes de iniciar, exporte e confie no certificado HTTPS de desenvolvimento. No PowerShell (Windows):
-
-```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE/.aspnet/https" | Out-Null
-dotnet dev-certs https --export-path "$env:USERPROFILE/.aspnet/https/eshop.pem" --format PEM --no-password
-dotnet dev-certs https --trust
-```
-
-O comando exporta `eshop.pem` e `eshop.key`. O Compose monta essa pasta como somente leitura nas duas APIs. Em Linux/macOS, use `$HOME/.aspnet/https` como pasta de exportação. A chave privada não tem senha: use apenas em desenvolvimento, restrinja o acesso à pasta e não adicione esses arquivos ao repositório. Sem os arquivos, as APIs não iniciam com esta configuração HTTPS.
+Para construir as imagens e iniciar as APIs, os bancos e o Redis:
 
 ```bash
 cd src
-docker compose up -d --build
+docker compose up -d --build --wait
 ```
-
-Sobe `catalogdb`, `basketdb`, `distribuitedcache`, `catalog.api` e `basket.api`. As APIs aguardam os healthchecks das respectivas dependências.
 
 | API | HTTP | HTTPS |
 |---|---|---|
 | Catalog | http://localhost:6000 | https://localhost:6060 |
 | Basket | http://localhost:6001 | https://localhost:6061 |
 
-O endpoint `/health` está disponível nos dois protocolos de cada API. HTTP permanece habilitado sem redirecionamento obrigatório para HTTPS.
+Acesse `/health` em cada API para verificar seu funcionamento.
 
-### Local (dotnet CLI)
-
-Suba apenas os bancos e rode os serviços pela IDE ou CLI:
+Para parar todos os serviços, mantendo os containers e os dados:
 
 ```bash
-cd src
-docker compose up -d catalogdb basketdb
-
-dotnet run --project Services/Catalog/Catalog.Api   # http://localhost:5000
-dotnet run --project Services/Basket/Basket.Api     # http://localhost:5001
+docker compose stop
 ```
 
-As connection strings padrão de `appsettings.json` já apontam para `localhost:5432` (catalog) e `localhost:5433` (basket). Em ambiente de desenvolvimento o Catalog popula o banco automaticamente via `CatalogInitialData`.
+Para remover também os containers e a rede, use `docker compose down`. Evite `down -v`, pois ele apaga os volumes com os dados dos bancos.
 
 ## Licença
 
