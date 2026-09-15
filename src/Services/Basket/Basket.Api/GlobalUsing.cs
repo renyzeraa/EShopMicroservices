@@ -9,6 +9,7 @@ global using Basket.Api.Models;
 global using Basket.Api.Exceptions;
 global using Basket.Api.Data;
 global using Marten;
+global using Discount.Grpc;
 global using FluentValidation;
 global using HealthChecks.UI.Client;
 global using Microsoft.AspNetCore.Diagnostics.HealthChecks;
