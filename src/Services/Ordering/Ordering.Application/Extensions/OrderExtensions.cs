@@ -1,0 +1,41 @@
+namespace Ordering.Application.Extensions;
+
+public static class OrderExtensions
+{
+  public static IEnumerable<OrderDto> ToOrderDtoList(this IEnumerable<Order> orders)
+  {
+    return orders.Select(order => order.ToOrderDto());
+  }
+
+  public static OrderDto ToOrderDto(this Order order)
+  {
+    return new OrderDto(
+      Id: order.Id.Value,
+      CustomerId: order.CustomerId.Value,
+      OrderName: order.OrderName.Value,
+      ShippingAddress: order.ShippingAddress.ToAddressDto(),
+      BillingAddress: order.BillingAddress.ToAddressDto(),
+      Payment: new PaymentDto(
+        order.Payment.CardName!,
+        order.Payment.CardNumber,
+        order.Payment.Expiration,
+        order.Payment.CVV,
+        order.Payment.PaymentMethod),
+      Status: order.Status,
+      OrderItems: order.OrderItems
+        .Select(item => new OrderItemDto(item.OrderId.Value, item.ProductId.Value, item.Quantity, item.Price))
+        .ToList());
+  }
+
+  private static AddressDto ToAddressDto(this Address address)
+  {
+    return new AddressDto(
+      address.FirstName,
+      address.LastName,
+      address.EmailAddress!,
+      address.AddressLine,
+      address.Country,
+      address.State,
+      address.ZipCode);
+  }
+}
