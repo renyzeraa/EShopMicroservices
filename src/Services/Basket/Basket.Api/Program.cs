@@ -44,6 +44,10 @@ if (builder.Environment.IsDevelopment())
     });
 }
 
+// Async Communication Services
+builder.Services.AddMessageBroker(builder.Configuration);
+
+// Cross-Cutting Services
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
 builder.Services.AddHealthChecks()
