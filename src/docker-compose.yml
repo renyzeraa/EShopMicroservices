@@ -11,6 +11,9 @@ services:
   orderdb:
     image: mcr.microsoft.com/mssql/server:2022-latest
 
+  messagebroker:
+    image: rabbitmq:management
+
   catalog.api:
     image: eshop/catalog.api:latest
     build:
@@ -34,3 +37,4 @@ volumes:
   postgres_basket:
   sqlite_discount:
   mssql_order:
+  rabbitmq_data:

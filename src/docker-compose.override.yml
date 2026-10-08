@@ -64,6 +64,25 @@ services:
       retries: 10
       start_period: 20s
 
+  messagebroker:
+    container_name: messagebroker
+    hostname: ecommerce-mq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   catalog.api:
     container_name: catalog.api
     environment:
@@ -94,10 +113,15 @@ services:
       - "ConnectionStrings__Database=Server=basketdb;Port=5432;Database=BasketDb;Username=postgres;Password=postgres;Include Error Detail=true"
       - "ConnectionStrings__Redis=distribuitedcache:6379"
       - "GrpcSettings__DiscountUrl=https://discount.grpc:8081"
+      - MessageBroker__Host=amqp://messagebroker:5672
+      - MessageBroker__UserName=guest
+      - MessageBroker__Password=guest
     depends_on:
       basketdb:
         condition: service_healthy
       distribuitedcache:
+        condition: service_healthy
+      messagebroker:
         condition: service_healthy
       discount.grpc:
         condition: service_started
