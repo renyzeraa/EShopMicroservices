@@ -19,6 +19,8 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly);
 
+        services.AddFeatureManagement();
+
         services.AddMessageBroker(configuration, assembly);
 
         return services;
