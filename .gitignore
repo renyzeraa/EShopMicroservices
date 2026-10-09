@@ -48,8 +48,6 @@ _ReSharper*/
 ## VS Code
 .vscode/*
 !.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
 
@@ -65,3 +63,6 @@ desktop.ini
 .env
 .env.*
 secrets.json
+
+## SQLite local databases (Discount)
+discountdb*
