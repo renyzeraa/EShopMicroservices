@@ -21,4 +21,7 @@
     <Project Path="Services/Ordering/Ordering.Domain/Ordering.Domain.csproj" />
     <Project Path="Services/Ordering/Ordering.Infrastructure/Ordering.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/WebApps/">
+    <Project Path="WebApps/Shopping.Web/Shopping.Web.csproj" />
+  </Folder>
 </Solution>
