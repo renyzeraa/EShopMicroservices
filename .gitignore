@@ -35,7 +35,6 @@ logs/
 wwwroot/lib/
 wwwroot/dist/
 appsettings.Development.json
-appsettings.Local.json
 
 ## Test results
 [Tt]est[Rr]esult*/
