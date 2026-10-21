@@ -192,3 +192,21 @@ services:
     volumes:
       - ${USERPROFILE:-${HOME}}/.aspnet/https:/https:ro
     restart: on-failure
+
+  shopping.web:
+    container_name: shopping.web
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/eshop.pem
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/https/eshop.key
+      - ApiSettings__GatewayAddress=http://yarpapigateway:8080
+    depends_on:
+      - yarpapigateway
+    ports:
+      - "6005:8080"
+      - "6065:8081"
+    volumes:
+      - ${USERPROFILE:-${HOME}}/.aspnet/https:/https:ro
+    restart: on-failure
